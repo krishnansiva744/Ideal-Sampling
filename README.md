@@ -1,109 +1,147 @@
-Aim:
+# Ideal, Natural, & Flat-top -Sampling
 
-To perform ideal (impulse) sampling of a continuous-time sinusoidal signal, visualize the sampled signal, and reconstruct it using Python.
+# Aim
 
-Tools/Software Required:
+Write a simple Python program for the construction and reconstruction of ideal, natural, and flattop sampling.
 
-1. Python Software
+# Tools required
 
--> Numpy Library
+IDLE Python(3.12 64-bit)
 
--> Matplotlib Library
+# Program
 
--> Scipy Library (for signal processing)
+**IDEAL SAMPLING CODE **
 
-Program :
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+fm = 5          
+fs = 40         
+t = np.arange(0, 1, 0.001)
+m = np.sin(2*np.pi*fm*t)  
+ts = np.arange(0, 1, 1/fs)
+ms = np.sin(2*np.pi*fm*ts)
+reconstructed = np.zeros(len(t))
+for k in range(len(ts)):
+    reconstructed += ms[k] * np.sinc((t - ts[k]) * fs)
+plt.figure(figsize=(10,8))
+plt.subplot(3,1,1)
+plt.plot(t, m, 'b', label="Continuous Signal")
+plt.title("Continuous Signal (fm=5 Hz)")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.subplot(3,1,2)
+plt.stem(ts, ms, linefmt='r-', markerfmt='ro', basefmt=" ", label="Sampled Signal")
+plt.title("Ideal Sampling (fs=40 Hz)")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.subplot(3,1,3)
+plt.plot(t, reconstructed, 'r', label="Reconstructed Signal")
+plt.title("Reconstructed Signal using sinc")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.tight_layout()
+plt.show()
 
-#Impulse Sampling
+```
+
+
+**NATURAL SAMPLING CODE **
+
+```python
 
 import numpy as np
-
 import matplotlib.pyplot as plt
-
-from scipy.signal import resample
-
-fs = 100
-
-t = np.arange(0, 1, 1/fs) 
-
-f = 5
-
-signal = np.sin(2 * np.pi * f * t)
-
-plt.figure(figsize=(10, 4))
-
-plt.plot(t, signal, label='Continuous Signal')
-
-plt.title('Continuous Signal (fs = 100 Hz)')
-
-plt.xlabel('Time [s]')
-
-plt.ylabel('Amplitude')
-
-plt.grid(True)
-
-plt.legend()
-
+fm = 5
+fs = 40
+t = np.arange(0, 1, 0.001)
+m = np.sin(2*np.pi*fm*t)
+pulse_width = 1/fs * 0.5
+natural = np.zeros(len(t))
+for ts in np.arange(0, 1, 1/fs):
+    idx = (t >= ts) & (t < ts + pulse_width)
+    natural[idx] = m[np.argmin(abs(t - ts))]
+window = int(1/(fs*0.001))
+reconstructed = np.convolve(natural, np.ones(window)/window, mode='same')
+plt.figure(figsize=(10,8))
+plt.subplot(3,1,1)
+plt.plot(t, m, 'b', label="Original Message Signal")
+plt.title("Original Message Signal")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.subplot(3,1,2)
+plt.plot(t, natural, 'c', label="Natural Sampled Signal")
+plt.title("Natural Sampling")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.subplot(3,1,3)
+plt.plot(t, reconstructed, 'r', label="Reconstructed Signal (LPF)")
+plt.title("Reconstructed Signal using Low-Pass Filter")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.tight_layout()
 plt.show()
 
-t_sampled = np.arange(0, 1, 1/fs)
+```
 
-signal_sampled = np.sin(2 * np.pi * f * t_sampled)
 
-plt.figure(figsize=(10, 4))
 
-plt.plot(t, signal, label='Continuous Signal', alpha=0.7)
+**FLAT-TOP SAMPLING CODE**
 
-plt.stem(t_sampled, signal_sampled, linefmt='r-', markerfmt='ro', basefmt='r-', label='Sampled Signal (fs = 100 Hz)')
-
-plt.title('Sampling of Continuous Signal (fs = 100 Hz)')
-
-plt.xlabel('Time [s]')
-
-plt.ylabel('Amplitude')
-
-plt.grid(True)
-
-plt.legend()
-
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+fm = 5
+fs = 40
+t = np.arange(0, 1, 0.001)
+m = np.sin(2*np.pi*fm*t)
+flat_top = np.zeros(len(t))
+ts = np.arange(0, 1, 1/fs)
+for k in range(len(ts)-1):
+    idx1 = np.argmin(abs(t - ts[k]))
+    idx2 = np.argmin(abs(t - ts[k+1]))
+    flat_top[idx1:idx2] = m[idx1]
+window = int(1/(fs*0.001))
+reconstructed = np.convolve(flat_top, np.ones(window)/window, mode='same')
+plt.figure(figsize=(10,8))
+plt.subplot(3,1,1)
+plt.plot(t, m, 'b', label="Original Message Signal")
+plt.title("Original Message Signal")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.subplot(3,1,2)
+plt.plot(t, flat_top, 'm', label="Flat-Top Sampled Signal")
+plt.title("Flat-Top Sampling (Sample-and-Hold)")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.subplot(3,1,3)
+plt.plot(t, reconstructed, 'g', label="Reconstructed Signal (LPF)")
+plt.title("Reconstructed Signal using Low-Pass Filter")
+plt.xlabel("Time (s)"); plt.ylabel("Amplitude")
+plt.grid(True); plt.legend()
+plt.tight_layout()
 plt.show()
 
-reconstructed_signal = resample(signal_sampled, len(t))
-
-plt.figure(figsize=(10, 4))
-
-plt.plot(t, signal, label='Continuous Signal', alpha=0.7)
-
-plt.plot(t, reconstructed_signal, 'r--', label='Reconstructed Signal (fs = 100 Hz)')
-
-plt.title('Reconstruction of Sampled Signal (fs = 100 Hz)')
-
-plt.xlabel('Time [s]')
-
-plt.ylabel('Amplitude')
-
-plt.grid(True)
-
-plt.legend()
-
-plt.show()
+```
 
 
+# Output Waveform
 
-Output Waveform : 
+**IDEAL SAMPLING OUTPUT**
 
-![Screenshot 2025-03-22 155318](https://github.com/user-attachments/assets/442e4910-09f2-4f8a-92cb-1967fe470e19) 
+<img width="1860" height="942" alt="image" src="https://github.com/user-attachments/assets/fb1e5f8e-4021-4b9d-b964-95d94e8b6bb1" />
 
-![Screenshot 2025-03-22 155345](https://github.com/user-attachments/assets/d8783a8d-906c-46d9-8bff-72e6dbd420c8) 
 
-![Screenshot 2025-03-22 155437](https://github.com/user-attachments/assets/21ed6514-a25d-4479-9b5d-b3e433ba5d68)
+**NATURAL SAMPLING OUTPUT**
 
-Results :
+<img width="1846" height="948" alt="image" src="https://github.com/user-attachments/assets/c431447d-859c-44da-91ea-3cc5ea785370" />
 
-The continuous sinusoidal signal was successfully sampled using ideal (impulse) sampling.
+**FLAT-TOP SAMPLING OUTPUT **
 
-The sampling was performed at a rate (100 Hz) higher than twice the signal frequency (5 Hz), satisfying the Nyquist criterion.
+<img width="1866" height="934" alt="image" src="https://github.com/user-attachments/assets/7090a201-6539-446e-bef8-5bf2603d6429" />
 
-The reconstruction of the signal using resampling accurately recovered the original waveform.
+# Results
 
-The experiment demonstrates the fundamental principle of ideal sampling and signal reconstruction.
+Thus, the python programs for ideal sampling, natural sampling and flat-top sampling has been executed and verified successfully.
+
+# Hardware experiment output waveform.
